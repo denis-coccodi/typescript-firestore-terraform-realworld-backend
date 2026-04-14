@@ -1,6 +1,6 @@
-import {Request, Response, NextFunction} from 'express';
-import {JWTService} from '../../users';
-import {UnauthorizedError} from '../../errors';
+import { NextFunction, Request, Response } from 'express';
+import { UnauthorizedError } from '../../errors';
+import { JWTService } from '../../users';
 
 class Auth {
   constructor(private readonly jwtService: JWTService) {}
@@ -63,4 +63,5 @@ class Auth {
   };
 }
 
-export {Auth};
+export { Auth };
+

@@ -1,13 +1,14 @@
-import {celebrate, Joi, Segments} from 'celebrate';
+import { celebrate, Joi, Segments } from 'celebrate';
 import * as express from 'express';
-import {StatusCodes} from 'http-status-codes';
-import {NotFoundError, UnauthorizedError} from '../errors';
-import {Auth} from '../middleware';
-import {Profile, ProfilesService} from '../profiles';
-import {UsersService} from '../users';
-import {Article} from './article';
-import {ArticlesService} from './articles-service';
-import {Comment} from './comment';
+import { StatusCodes } from 'http-status-codes';
+import { config } from '../config';
+import { NotFoundError, UnauthorizedError } from '../errors';
+import { Auth } from '../middleware';
+import { Profile, ProfilesService } from '../profiles';
+import { UsersService } from '../users';
+import { Article } from './article';
+import { ArticlesService } from './articles-service';
+import { Comment } from './comment';
 
 class ArticleDto {
   readonly article;
@@ -26,7 +27,7 @@ class ArticleDto {
       author: {
         username: author.username,
         bio: author.bio,
-        image: author.image,
+        image: author.image || `${config.baseUrl}/assets/images/avatar-profile.png`,
         following: author.following,
       },
     };
@@ -55,7 +56,8 @@ class CommentDto {
       author: {
         username: author.username,
         bio: author.bio,
-        image: author.image,
+        image:
+          author.image || `${config.baseUrl}/assets/images/avatar-profile.png`,
         following: author.following,
       },
     };
@@ -606,4 +608,5 @@ class ArticlesRouter {
   }
 }
 
-export {ArticlesRouter};
+export { ArticlesRouter };
+

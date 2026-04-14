@@ -1,10 +1,11 @@
+import { celebrate, Joi, Segments } from 'celebrate';
 import * as express from 'express';
-import {StatusCodes} from 'http-status-codes';
-import {celebrate, Joi, Segments} from 'celebrate';
-import {UsersService} from './users-service';
-import {JWTService} from './jwt-service';
-import {NotFoundError, UnauthorizedError} from '../errors';
-import {Auth} from '../middleware';
+import { StatusCodes } from 'http-status-codes';
+import { config } from '../config';
+import { NotFoundError, UnauthorizedError } from '../errors';
+import { Auth } from '../middleware';
+import { JWTService } from './jwt-service';
+import { UsersService } from './users-service';
 
 class UserDto {
   readonly user;
@@ -21,7 +22,7 @@ class UserDto {
       username,
       token,
       bio: bio || null,
-      image: image || null,
+      image: image || `${config.baseUrl}/assets/images/avatar-profile.png`,
     };
   }
 }
@@ -160,7 +161,7 @@ class UsersRouter {
                 username: Joi.string(),
                 password: Joi.string(),
                 bio: Joi.string(),
-                image: Joi.string().uri(),
+                image: Joi.string().uri() || `${config.baseUrl}/assets/images/avatar-profile.png`,
               })
               .required(),
           })
@@ -199,4 +200,5 @@ class UsersRouter {
   }
 }
 
-export {UsersRouter};
+export { UsersRouter };
+

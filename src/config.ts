@@ -23,6 +23,7 @@ const config = {
     projectId: envVars.FIRESTORE_PROJECT_ID,
   },
   port: envVars.PORT,
+  baseUrl: envVars.BASE_URL,
   jwt: {
     secretKey: envVars.JWT_SECRET_KEY,
     issuer: envVars.JWT_ISSUER,

@@ -1,8 +1,9 @@
 import * as express from 'express';
-import {NotFoundError} from '../errors';
-import {Auth} from '../middleware';
-import {UsersService} from '../users';
-import {ProfilesService} from './profiles-service';
+import { config } from '../config';
+import { NotFoundError } from '../errors';
+import { Auth } from '../middleware';
+import { UsersService } from '../users';
+import { ProfilesService } from './profiles-service';
 
 class ProfileDto {
   readonly profile;
@@ -17,7 +18,7 @@ class ProfileDto {
       username,
       following,
       bio: bio || null,
-      image: image || null,
+      image: image || `${config.baseUrl}/assets/images/avatar-profile.png`,
     };
   }
 }
@@ -133,4 +134,5 @@ class ProfilesRouter {
   }
 }
 
-export {ProfilesRouter};
+export { ProfilesRouter };
+

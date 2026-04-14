@@ -1,11 +1,13 @@
-import * as express from 'express';
-import {Firestore} from '@google-cloud/firestore';
-import {UsersService, UsersRouter, JWTService} from './users';
-import {errorHandler} from './error-handler';
-import {config} from './config';
-import {Auth} from './middleware';
-import {ProfilesRouter, ProfilesService} from './profiles';
-import {ArticlesRouter, ArticlesService} from './articles';
+import { Firestore } from '@google-cloud/firestore';
+import cors from 'cors';
+import express from 'express';
+import path from 'path';
+import { ArticlesRouter, ArticlesService } from './articles';
+import { config } from './config';
+import { errorHandler } from './error-handler';
+import { Auth } from './middleware';
+import { ProfilesRouter, ProfilesService } from './profiles';
+import { JWTService, UsersRouter, UsersService } from './users';
 
 const firestore = new Firestore({
   projectId: config.firestore.projectId,
@@ -42,7 +44,17 @@ const articlesRouter = new ArticlesRouter(
 
 const app = express();
 
+app.use(
+  cors({
+    origin: 'http://localhost:4200',
+    credentials: true,
+  })
+);
+
 app.use(express.json());
+
+// Serve static files from the 'assets' directory
+app.use('/assets', express.static(path.join(__dirname, '../assets')));
 
 app.use('/api', usersRouter);
 
@@ -62,4 +74,4 @@ app.use(
   }
 );
 
-export {app};
+export { app };
