@@ -106,7 +106,7 @@ class UsersService {
   }
 
   async updateUser(userId: string, params: UpdateUserParams): Promise<User> {
-    await this.firestore.runTransaction(async t => {
+    const updatedData = await this.firestore.runTransaction(async t => {
       const userDocRef = this.firestore.doc(
         `${this.usersCollection}/${userId}`
       );
@@ -145,9 +145,16 @@ class UsersService {
       }
 
       t.update(userDocRef, userData);
+      return userData;
     });
 
-    return (await this.getUserById(userId))!;
+    return new User(
+      userId,
+      updatedData.email,
+      updatedData.username,
+      updatedData.bio,
+      updatedData.image
+    );
   }
 
   async verifyPassword(email: string, password: string): Promise<boolean> {

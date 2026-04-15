@@ -1,13 +1,14 @@
-import { Firestore } from '@google-cloud/firestore';
+import {Firestore} from '@google-cloud/firestore';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 import path from 'path';
-import { ArticlesRouter, ArticlesService } from './articles';
-import { config } from './config';
-import { errorHandler } from './error-handler';
-import { Auth } from './middleware';
-import { ProfilesRouter, ProfilesService } from './profiles';
-import { JWTService, UsersRouter, UsersService } from './users';
+import {ArticlesRouter, ArticlesService} from './articles';
+import {config} from './config';
+import {errorHandler} from './error-handler';
+import {Auth} from './middleware';
+import {ProfilesRouter, ProfilesService} from './profiles';
+import {JWTService, UsersRouter, UsersService} from './users';
 
 const firestore = new Firestore({
   projectId: config.firestore.projectId,
@@ -52,6 +53,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use(cookieParser());
 
 // Serve static files from the 'assets' directory
 app.use('/assets', express.static(path.join(__dirname, '../assets')));
@@ -74,4 +76,4 @@ app.use(
   }
 );
 
-export { app };
+export {app};

@@ -8,11 +8,15 @@ interface JWTOptions {
 }
 
 class JWTService {
+  readonly secondsToExpiration: number;
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtSecretKey: string,
     private readonly jwtOptions: JWTOptions
-  ) {}
+  ) {
+    this.secondsToExpiration = jwtOptions.secondsToExpiration;
+  }
 
   getToken(user: User) {
     const token = jwt.sign({}, this.jwtSecretKey, {

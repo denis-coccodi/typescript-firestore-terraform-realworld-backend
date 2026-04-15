@@ -27,6 +27,13 @@ class UserDto {
   }
 }
 
+const COOKIE_NAME = 'token';
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'strict' as const,
+};
+
 class UsersRouter {
   constructor(
     private readonly auth: Auth,
@@ -71,6 +78,11 @@ class UsersRouter {
             user.bio,
             user.image
           );
+
+          res.cookie(COOKIE_NAME, token, {
+            ...COOKIE_OPTIONS,
+            maxAge: 1000 * this.jwtService.secondsToExpiration,
+          });
 
           return res.status(StatusCodes.CREATED).json(userDto);
         } catch (err) {
@@ -127,12 +139,22 @@ class UsersRouter {
             user.image
           );
 
+          res.cookie(COOKIE_NAME, token, {
+            ...COOKIE_OPTIONS,
+            maxAge: 1000 * this.jwtService.secondsToExpiration,
+          });
+
           return res.json(userDto);
         } catch (err) {
           return next(err);
         }
       }
     );
+
+    router.post('/users/logout', (_req, res) => {
+      res.clearCookie(COOKIE_NAME, COOKIE_OPTIONS);
+      return res.status(StatusCodes.NO_CONTENT).send();
+    });
 
     router.get('/user', this.auth.requireAuth, async (req, res) => {
       const user = req.user!;

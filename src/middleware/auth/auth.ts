@@ -52,6 +52,10 @@ class Auth {
   };
 
   private getToken = (req: Request) => {
+    if (req.cookies?.token) {
+      return req.cookies.token as string;
+    }
+
     const authorizationHeader =
       req.header('Authorization') || req.header('authorization');
 
@@ -59,7 +63,9 @@ class Auth {
       return;
     }
 
-    return authorizationHeader.split(' ')[1];
+    // Support both "Bearer <token>" and "Token <token>" (RealWorld spec)
+    const parts = authorizationHeader.split(' ');
+    return parts.length === 2 ? parts[1] : undefined;
   };
 }
 
