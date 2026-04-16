@@ -21,6 +21,8 @@ services:
     environment:
       - FIRESTORE_PROJECT_ID=${FIRESTORE_PROJECT_ID}
       - PORT=${FIRESTORE_EMULATOR_PORT}
+    volumes:
+      - firestore_data:/root/.config
     healthcheck:
       test:
         [
@@ -32,3 +34,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+volumes:
+  firestore_data:
