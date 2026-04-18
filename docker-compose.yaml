@@ -1,11 +1,10 @@
-version: '3.9'
 services:
   app:
     build: .
     ports:
       - ${PORT}:${PORT}
     environment:
-      - FIRESTORE_EMULATOR_HOST=firestore_emulator:${FIRESTORE_EMULATOR_PORT}
+      - FIRESTORE_EMULATOR_HOST=firestore_emulator:8080
       - FIRESTORE_PROJECT_ID=${FIRESTORE_PROJECT_ID}
       - PORT=${PORT}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
@@ -15,25 +14,22 @@ services:
       firestore_emulator:
         condition: service_healthy
   firestore_emulator:
-    image: 'mtlynch/firestore-emulator'
+    image: 'andreysenov/firebase-tools'
+    command: >
+      firebase emulators:start
+      --only firestore
+      --project ${FIRESTORE_PROJECT_ID}
+      --import=/data
+      --export-on-exit=/data
     ports:
-      - ${FIRESTORE_EMULATOR_PORT}:${FIRESTORE_EMULATOR_PORT}
-    environment:
-      - FIRESTORE_PROJECT_ID=${FIRESTORE_PROJECT_ID}
-      - PORT=${FIRESTORE_EMULATOR_PORT}
+      - ${FIRESTORE_EMULATOR_PORT}:8080
     volumes:
-      - firestore_data:/root/.config
+      - ./firebase.json:/home/node/firebase.json
+      - ./firestore-data:/data
     healthcheck:
-      test:
-        [
-          'CMD',
-          'curl',
-          '-f',
-          'http://firestore_emulator:${FIRESTORE_EMULATOR_PORT}',
-        ]
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:8080', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
 
-volumes:
-  firestore_data:
+volumes: {}

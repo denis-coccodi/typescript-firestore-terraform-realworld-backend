@@ -274,3 +274,6 @@ $RECYCLE.BIN/
 
 # Build folder
 build
+
+# Firestore emulator data
+firestore-data/
