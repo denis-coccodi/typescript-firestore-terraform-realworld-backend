@@ -19,8 +19,8 @@ services:
       firebase emulators:start
       --only firestore
       --project ${FIRESTORE_PROJECT_ID}
-      --import=/data
-      --export-on-exit=/data
+      --import=/data/latest
+      --export-on-exit=/data/latest
     ports:
       - ${FIRESTORE_EMULATOR_PORT}:8080
     volumes:

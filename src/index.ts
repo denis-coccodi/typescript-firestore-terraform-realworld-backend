@@ -1,13 +1,17 @@
+import * as fs from 'fs';
 import * as http from 'http';
-import { app } from './app';
-import { config } from './config';
+import * as path from 'path';
+import {app} from './app';
+import {config} from './config';
 
 function startBackup() {
   const INTERVAL_MS = 30_000;
   const [hostname, port] = config.firestore.emulatorHost!.split(':');
+  const backupDir = path.join(__dirname, '../firestore-data/latest');
+  fs.mkdirSync(backupDir, {recursive: true});
   const PAYLOAD = JSON.stringify({
     database: `projects/${config.firestore.projectId}/databases/(default)`,
-    exportDirectory: '/data',
+    exportDirectory: '/data/latest',
   });
 
   const run = () => {
@@ -21,14 +25,20 @@ function startBackup() {
       },
       res => {
         if (res.statusCode !== 200) {
-          console.error(`Firestore backup failed: ${res.statusCode}`);
+          let body = '';
+          res.on('data', chunk => (body += chunk));
+          res.on('end', () =>
+            console.error(`Firestore backup failed: ${res.statusCode} ${body}`)
+          );
         } else {
           console.log(`[${new Date().toISOString()}] Firestore backup OK`);
+          res.resume();
         }
-        res.resume();
       }
     );
-    req.on('error', err => console.error(`Firestore backup error: ${err.message}`));
+    req.on('error', err =>
+      console.error(`Firestore backup error: ${err.message}`)
+    );
     req.end(PAYLOAD);
   };
 
