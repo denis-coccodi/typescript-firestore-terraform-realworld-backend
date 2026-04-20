@@ -3,7 +3,7 @@ Premise: I can't do BE for S#17 so BE changes are mostly AI Generated
 CHANGES
 ----------------
 
-- Periodic database backup system so that the Docker Firestore instance will repopulate on reboot <font color="yellow">\[AI\]</font>
+- Periodic database backup system so that the Docker Firestore instance will repopulate on reboot. $${\color{red}\[AI\]}$$
 - Command to dump db content for external viewing. $${\color{red}\[AI\]}$$
 - Set up to avoid CORS errors with local FE. $${\color{red}\[AI\]}$$
 - Send generic default image url instead of nothing as user image. $${\color{yellow}\[MANUAL\]}$$
