@@ -15,12 +15,14 @@ services:
         condition: service_healthy
   firestore_emulator:
     image: 'andreysenov/firebase-tools'
+    entrypoint: /bin/sh -c
     command: >
-      firebase emulators:start
-      --only firestore
-      --project ${FIRESTORE_PROJECT_ID}
-      --import=/data/latest
-      --export-on-exit=/data/latest
+      "LATEST=$(ls -td /data/firestore_export_* 2>/dev/null | head -1);
+      if [ -n \"$$LATEST\" ]; then
+        firebase emulators:start --only firestore --project ${FIRESTORE_PROJECT_ID} --import=$$LATEST --export-on-exit=/data;
+      else
+        firebase emulators:start --only firestore --project ${FIRESTORE_PROJECT_ID} --export-on-exit=/data;
+      fi"
     ports:
       - ${FIRESTORE_EMULATOR_PORT}:8080
     volumes:

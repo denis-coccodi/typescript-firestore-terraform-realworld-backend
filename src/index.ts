@@ -1,17 +1,30 @@
 import * as fs from 'fs';
 import * as http from 'http';
 import * as path from 'path';
-import {app} from './app';
-import {config} from './config';
+import { app } from './app';
+import { config } from './config';
+
+const BACKUP_DIR = path.join(__dirname, '../firestore-data');
+const MAX_BACKUPS = 3;
+
+function pruneBackups() {
+  if (!fs.existsSync(BACKUP_DIR)) return;
+  const entries = fs
+    .readdirSync(BACKUP_DIR)
+    .filter(e => e.startsWith('firestore_export'))
+    .sort()
+    .reverse();
+  for (const entry of entries.slice(MAX_BACKUPS)) {
+    fs.rmSync(path.join(BACKUP_DIR, entry), {recursive: true, force: true});
+  }
+}
 
 function startBackup() {
   const INTERVAL_MS = 30_000;
   const [hostname, port] = config.firestore.emulatorHost!.split(':');
-  const backupDir = path.join(__dirname, '../firestore-data/latest');
-  fs.mkdirSync(backupDir, {recursive: true});
   const PAYLOAD = JSON.stringify({
     database: `projects/${config.firestore.projectId}/databases/(default)`,
-    exportDirectory: '/data/latest',
+    exportDirectory: '/data',
   });
 
   const run = () => {
@@ -33,6 +46,7 @@ function startBackup() {
         } else {
           console.log(`[${new Date().toISOString()}] Firestore backup OK`);
           res.resume();
+          pruneBackups();
         }
       }
     );

@@ -1,3 +1,16 @@
+----------------
+CHANGES
+----------------
+
+- Periodic database backup system so that the Docker Firestore instance will repopulate on reboot \[AI\]
+- Command to dump db content for external viewing \[AI\]
+- Set up to avoid CORS errors with local FE \[AI\].
+- Send generic default image url instead of nothing as user image. \[MANUAL\]
+- Reimplemented CRLF cookie Token Auth BE side \[AI\]
+
+\[AI\]: Change mainly implemented through the use of AI.
+\[MANUAL\]: Change mainly implemented manually.
+
 # ![RealWorld Example App](logo.png)
 
 > ### [TypeScript](https://www.typescriptlang.org/) codebase containing real world examples (CRUD, auth, advanced patterns, etc) that adheres to the [RealWorld](https://github.com/gothinkster/realworld) spec and API.
