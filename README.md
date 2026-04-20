@@ -4,13 +4,17 @@ CHANGES
 ----------------
 
 - Periodic database backup system so that the Docker Firestore instance will repopulate on reboot <font color="yellow">\[AI\]</font>
-- Command to dump db content for external viewing. <font color="#f70202">\[AI\]</font>
-- Set up to avoid CORS errors with local FE. <font color="#f70202">\[AI\]</font>
-- Send generic default image url instead of nothing as user image. <font color="#fcdb03">\[MANUAL\]</font>
-- Reimplemented CRLF cookie Token Auth BE side. <font color="#f70202">\[AI\]</font>
+- Command to dump db content for external viewing. $${\color{red}\[AI\]}$$
+- Set up to avoid CORS errors with local FE. $${\color{red}\[AI\]}$$
+- Send generic default image url instead of nothing as user image. $${\color{yellow}\[MANUAL\]}$$
+- Reimplemented CRLF cookie Token Auth BE side. $${\color{red}\[AI\]}$$
 
-<font color="#f70202">\[AI\]</font>: Change mainly implemented through the use of AI. <br>
-<font color="#fcdb03">\[MANUAL\]</font>: Change mainly implemented manually.
+$${\color{red}\[AI\]}$$: Change mainly implemented through the use of AI. <br>
+$${\color{yellow}\[MANUAL\]}$$: Change mainly implemented manually.
+
+---------------------
+ORIGINAL README FILE
+---------------------
 
 # ![RealWorld Example App](logo.png)
 
