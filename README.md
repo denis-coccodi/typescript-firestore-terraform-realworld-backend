@@ -1,15 +1,16 @@
+Premise: I can't do BE for S#17 so BE changes are mostly AI Generated 
 ----------------
 CHANGES
 ----------------
 
-- Periodic database backup system so that the Docker Firestore instance will repopulate on reboot \[AI\]
-- Command to dump db content for external viewing \[AI\]
-- Set up to avoid CORS errors with local FE \[AI\].
-- Send generic default image url instead of nothing as user image. \[MANUAL\]
-- Reimplemented CRLF cookie Token Auth BE side \[AI\]
+- Periodic database backup system so that the Docker Firestore instance will repopulate on reboot <font color="yellow">\[AI\]</font>
+- Command to dump db content for external viewing. <font color="yellow">\[AI\]</font>
+- Set up to avoid CORS errors with local FE. <font color="yellow">\[AI\]</font>
+- Send generic default image url instead of nothing as user image. <font color="blue">\[MANUAL\]</font>
+- Reimplemented CRLF cookie Token Auth BE side. <font color="yellow">\[AI\]</font>
 
-\[AI\]: Change mainly implemented through the use of AI.
-\[MANUAL\]: Change mainly implemented manually.
+<font color="yellow">\[AI\]</font>: Change mainly implemented through the use of AI. <br>
+<font color="blue">\[MANUAL\]</font>: Change mainly implemented manually.
 
 # ![RealWorld Example App](logo.png)
 
