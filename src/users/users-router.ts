@@ -1,11 +1,11 @@
-import { celebrate, Joi, Segments } from 'celebrate';
+import {celebrate, Joi, Segments} from 'celebrate';
 import * as express from 'express';
-import { StatusCodes } from 'http-status-codes';
-import { config } from '../config';
-import { NotFoundError, UnauthorizedError } from '../errors';
-import { Auth } from '../middleware';
-import { JWTService } from './jwt-service';
-import { UsersService } from './users-service';
+import {StatusCodes} from 'http-status-codes';
+import {config} from '../config';
+import {NotFoundError, UnauthorizedError} from '../errors';
+import {Auth} from '../middleware';
+import {JWTService} from './jwt-service';
+import {UsersService} from './users-service';
 
 class UserDto {
   readonly user;
@@ -28,10 +28,12 @@ class UserDto {
 }
 
 const COOKIE_NAME = 'token';
+const isProd = process.env.NODE_ENV === 'production';
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
+  // SameSite=none requires Secure; Chrome allows Secure on http://localhost as a special exception.
+  secure: true,
+  sameSite: (isProd ? 'strict' : 'none') as 'strict' | 'none',
 };
 
 class UsersRouter {
@@ -183,7 +185,9 @@ class UsersRouter {
                 username: Joi.string(),
                 password: Joi.string(),
                 bio: Joi.string(),
-                image: Joi.string().uri() || `${config.baseUrl}/assets/images/avatar-profile.png`,
+                image:
+                  Joi.string().uri() ||
+                  `${config.baseUrl}/assets/images/avatar-profile.png`,
               })
               .required(),
           })
@@ -222,5 +226,4 @@ class UsersRouter {
   }
 }
 
-export { UsersRouter };
-
+export {UsersRouter};
