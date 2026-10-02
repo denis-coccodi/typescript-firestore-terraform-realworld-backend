@@ -28,12 +28,12 @@ class UserDto {
 }
 
 const COOKIE_NAME = 'token';
-const isProd = process.env.NODE_ENV === 'production';
 const COOKIE_OPTIONS = {
   httpOnly: true,
   // SameSite=none requires Secure; Chrome allows Secure on http://localhost as a special exception.
   secure: true,
-  sameSite: (isProd ? 'strict' : 'none') as 'strict' | 'none',
+  // "none" while the FE runs on another site; "strict" once FE and API share an origin.
+  sameSite: config.cookieSameSite,
 };
 
 class UsersRouter {

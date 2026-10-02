@@ -3,11 +3,12 @@ Premise: I can't do BE for S#17 so BE changes are mostly AI Generated
 CHANGES
 ----------------
 
-- Periodic database backup system so that the Docker Firestore instance will repopulate on reboot. $${\color{red}\[AI\]}$$
-- Command to dump db content for external viewing. $${\color{red}\[AI\]}$$
+- ~~Periodic database backup system so that the Docker Firestore instance will repopulate on reboot.~~ Removed: local data now persists on its own. $${\color{red}\[AI\]}$$
+- ~~Command to dump db content for external viewing.~~ Removed together with Firestore. $${\color{red}\[AI\]}$$
 - Set up to avoid CORS errors with local FE. $${\color{red}\[AI\]}$$
 - Send generic default image url instead of nothing as user image. $${\color{yellow}\[MANUAL\]}$$
 - Reimplemented CRLF cookie Token Auth BE side. $${\color{red}\[AI\]}$$
+- Moved off Google Cloud: Firestore, Cloud Run, Docker, Terraform and Cloud Build are replaced by Cloudflare Workers, a Durable Object as NoSQL database and GitHub Actions for CI/CD. Hosting is free. $${\color{red}\[AI\]}$$
 
 $${\color{red}\[AI\]}$$: Change mainly implemented through the use of AI. <br>
 $${\color{yellow}\[MANUAL\]}$$: Change mainly implemented manually.
@@ -32,69 +33,51 @@ For more information on how to this works with other frontends/backends, head ov
 
 This is an [Express.js](https://expressjs.com/) based web-application, written in [TypeScript](https://www.typescriptlang.org/), that implements the [RealWorld](https://realworld-docs.netlify.app/) API [endpoints](https://realworld-docs.netlify.app/docs/specs/backend-specs/endpoints).
 
-It depends on [Firestore](https://cloud.google.com/firestore), a Serverless document database available on [Google Cloud](https://cloud.google.com/). Hence, this app can only be deployed on the Google Cloud platform.
+It runs on [Cloudflare Workers](https://developers.cloudflare.com/workers/) (free plan) using Cloudflare's [Node.js HTTP server support](https://developers.cloudflare.com/workers/runtime-apis/nodejs/http/), so the Express app runs unchanged.
 
 ## System Design
 
-![system Design Diagram](./google-cloud-system-design-diagram.png)
+```
+Browser ──HTTPS──> Cloudflare Worker "conduit"
+                    ├─ /assets/*  static files from public/ (served before the Worker runs)
+                    └─ /api/*     Express app ──RPC──> Durable Object "ConduitDb" (NoSQL document store)
+```
 
-- [Cloud Load Balancing](https://cloud.google.com/load-balancing)
-- [Cloud Run](https://cloud.google.com/run)
-- [Firestore](https://cloud.google.com/firestore)
+- **Database**: a single [Durable Object](https://developers.cloudflare.com/durable-objects/) with SQLite-backed storage, used as a key-value document store (`src/db`). Documents live under `<collection>/<id>` keys. Storage is strongly consistent and requests are processed one at a time, so checks like "is this username taken?" can't race. Queries scan a collection, which is fine at this app's scale.
+- **CI/CD**: GitHub Actions (`.github/workflows/ci-cd.yaml`). Every push and PR runs the tests, type-check and lint. Pushes to `main` then deploy with `wrangler deploy`.
 
 # Getting started
 
 1. [Install `Node.js` and `npm`](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
-1. [Install `Docker`](https://docs.docker.com/get-docker/).
-1. Run `npm start`.
+1. Run `npm install`.
+1. Run `npm start`. The API runs on http://localhost:8080 using a local Durable Object, so no Docker is needed.
+
+Local data is kept in `.wrangler/state` and survives restarts. Delete that folder to start from an empty database. Local settings live in `.dev.vars`, which overrides the `vars` in `wrangler.jsonc`.
 
 ## Testing
 
 1. Run `npm test`.
 
+Tests run the Express app in Node against an in-memory version of the same document store, so they need no Docker or emulator.
+
 # Deployment
 
-## [Google Cloud](https://cloud.google.com/)
+## [Cloudflare](https://www.cloudflare.com/) + GitHub Actions
 
-### Bootstrap
+### One-time setup
 
-This process creates the projects, creates the [Artifact Registry](https://cloud.google.com/artifact-registry) repository (in the Bootstrap project), enables the [Cloud Build](https://cloud.google.com/build) API, grants the `iam.securityAdmin` to the Cloud Build Service Account, sets up the Build Pipeline in the `development` project and the Deployment pipeline in the `production` project.
+1. Create a free [Cloudflare account](https://dash.cloudflare.com/sign-up) and pick a `workers.dev` subdomain (Workers & Pages → Overview).
+1. Create an [API token](https://dash.cloudflare.com/profile/api-tokens) from the **Edit Cloudflare Workers** template.
+1. In the GitHub repository go to Settings → Secrets and variables → Actions and add these **secrets**:
+   - `CLOUDFLARE_API_TOKEN`: the token from the previous step.
+   - `CLOUDFLARE_ACCOUNT_ID`: shown in the Cloudflare dashboard sidebar (Workers & Pages → Overview).
+   - `JWT_SECRET_KEY`: a long random string, e.g. the output of `node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"`.
+1. In `wrangler.jsonc`, set `BASE_URL` to `https://conduit.<your-subdomain>.workers.dev` and add your frontend's origin to `CORS_ORIGINS`.
+1. Push to `main`. The workflow tests the code, then deploys it.
 
-1. Create an [Organization](https://cloud.google.com/resource-manager/docs/creating-managing-organization) on Google Cloud.
-1. Create a [Folder](https://cloud.google.com/resource-manager/docs/creating-managing-folders) on your Organization to create your projects in.
-1. Create a [Billing Account](https://cloud.google.com/billing/docs/how-to/manage-billing-account#create_a_new_billing_account).
-1. Install [terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli).
-1. Install the [gcloud CLI](https://cloud.google.com/sdk/docs/install).
-1. Run [`gcloud auth login`](https://cloud.google.com/sdk/gcloud/reference/auth/login).
-1. Run [`gcloud auth application-default login`](https://cloud.google.com/sdk/gcloud/reference/auth/application-default/login).
-1. Make sure you own a domain name and have access to it's DNS configuration. This will be necessary to [enable HTTPS](https://cloud.google.com/iap/docs/load-balancer-howto#update_dns).
-1. `cd` into the [`deployment/google-cloud/terraform/bootstrap`](./deployment/google-cloud/terraform/bootstrap).
-1. Comment out the entire contents of the [`backend.tf`](https://developer.hashicorp.com/terraform/language/settings/backends/gcs) file.
-1. Create a [`terraform.tfvars`](https://developer.hashicorp.com/terraform/language/values/variables#variable-definitions-tfvars-files) file and add your variables' values.
-1. Run `terraform init`.
-1. Run `terraform apply -target=module.bootstrap_project.google_project_service.enable_apis`.
-1. Wait a few minutes until the APIs are enabled.
-1. Run `terraform apply -target=module.bootstrap_project`.
-1. Uncomment the `backend.tf` file's contents and update the `bucket` argument to the value of the `tfstate_bucket` output.
-1. Run `terraform init` and type `yes`.
-1. Run `terraform apply -target=module.project`.
-1. [Manually connect the Github repositories via the console in CloudBuild](https://cloud.google.com/build/docs/automating-builds/github/connect-repo-github). Do not create a Trigger, just click `DONE` once the repository is connected.
-1. Run `terraform apply`.
+### Cookies and the frontend
 
-### Build
+The auth cookie uses `COOKIE_SAME_SITE` (in `wrangler.jsonc`):
 
-1. A [Cloud Build](https://cloud.google.com/build) shoud run to build and push a container image to [Artifact Registry](https://cloud.google.com/artifact-registry) everytime you push a commit to the branch corresponding to the value you set for the `github_repo_branch` variable.
-1. It will also deploy the system into a "Development" environment.
-1. After the system is deployed, [set up HTTPS for the created Load Balancers](https://cloud.google.com/iap/docs/load-balancer-howto#update_dns).
-
-![Build Pipeline](./google-cloud-build-pipeline.png)
-
-### Tag and Deployment
-
-1. [Create a Release](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository#creating-a-release) on Github and tag the commit with a value matching the regex you used as the value of the `github_repo_commit_tag` variable.
-1. This will run the Tag pipeline to tag the artifacts.
-1. It will also trigger a Deployment to Production.
-
-![Tag Pipeline](./google-cloud-tag-pipeline.png)
-
-![Deployment Pipeline](./google-cloud-deployment-pipeline.png)
+- `none` (default): needed while the frontend runs on another site, e.g. `localhost:4200` or another `*.workers.dev` subdomain. Every `*.workers.dev` subdomain counts as a separate site.
+- `strict`: use this once the frontend and the API share one origin, for example a frontend Worker that forwards `/api/*` to this Worker through a [service binding](https://developers.cloudflare.com/workers/runtime-apis/bindings/service-bindings/).

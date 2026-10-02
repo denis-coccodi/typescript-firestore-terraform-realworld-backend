@@ -1,7 +1,7 @@
 import 'jest-extended';
-import * as request from 'supertest';
+import request from 'supertest';
 import {faker} from '@faker-js/faker';
-import {app} from '../../src/app';
+import {app} from '../utils/app';
 import {usersClient, jwt} from '../utils';
 
 describe('PUT /api/user', () => {

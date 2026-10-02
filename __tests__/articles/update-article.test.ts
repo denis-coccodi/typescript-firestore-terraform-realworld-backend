@@ -1,9 +1,9 @@
 import 'jest-extended';
-import * as request from 'supertest';
+import request from 'supertest';
 import slugify from 'slugify';
 import {faker} from '@faker-js/faker';
-import {app} from '../../src/app';
-import {articlesClient, clearFirestore, jwt, usersClient} from '../utils';
+import {app} from '../utils/app';
+import {articlesClient, clearDb, jwt, usersClient} from '../utils';
 
 describe('PUT /api/articles/:slug', () => {
   function makeUpdateArticleUrl(slug: string) {
@@ -11,7 +11,7 @@ describe('PUT /api/articles/:slug', () => {
   }
 
   beforeEach(async () => {
-    await clearFirestore();
+    await clearDb();
   });
 
   describe('given a valid request', () => {

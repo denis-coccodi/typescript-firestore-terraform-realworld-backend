@@ -1,8 +1,8 @@
 import 'jest-extended';
-import * as request from 'supertest';
+import request from 'supertest';
 import slugify from 'slugify';
 import {faker} from '@faker-js/faker';
-import {app} from '../../src/app';
+import {app} from '../utils/app';
 import {articlesClient, jwt, usersClient} from '../utils';
 
 describe('POST /api/articles/:slug/comments', () => {

@@ -275,5 +275,11 @@ $RECYCLE.BIN/
 # Build folder
 build
 
-# Firestore emulator data
+
+
+
+# Wrangler local state (local Durable Object data lives here)
+.wrangler/
+
+# Legacy Firestore emulator data (no longer used)
 firestore-data/

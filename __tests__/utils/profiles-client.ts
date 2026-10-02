@@ -1,6 +1,6 @@
-import * as request from 'supertest';
+import request from 'supertest';
 import * as assert from 'node:assert';
-import {app} from '../../src/app';
+import {app} from './app';
 
 class ProfilesClient {
   constructor() {}

@@ -1,14 +1,14 @@
 import 'jest-extended';
-import * as request from 'supertest';
+import request from 'supertest';
 import {faker} from '@faker-js/faker';
-import {app} from '../../src/app';
-import {articlesClient, clearFirestore, jwt, usersClient} from '../utils';
+import {app} from '../utils/app';
+import {articlesClient, clearDb, jwt, usersClient} from '../utils';
 
 describe('POST /api/articles', () => {
   const createArticleUrl = '/api/articles';
 
   beforeEach(async () => {
-    await clearFirestore();
+    await clearDb();
   });
 
   describe('given a valid request', () => {

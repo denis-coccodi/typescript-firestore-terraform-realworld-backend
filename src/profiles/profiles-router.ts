@@ -1,9 +1,9 @@
 import * as express from 'express';
-import { config } from '../config';
-import { NotFoundError } from '../errors';
-import { Auth } from '../middleware';
-import { UsersService } from '../users';
-import { ProfilesService } from './profiles-service';
+import {config} from '../config';
+import {NotFoundError} from '../errors';
+import {Auth} from '../middleware';
+import {UsersService} from '../users';
+import {ProfilesService} from './profiles-service';
 
 class ProfileDto {
   readonly profile;
@@ -134,5 +134,4 @@ class ProfilesRouter {
   }
 }
 
-export { ProfilesRouter };
-
+export {ProfilesRouter};

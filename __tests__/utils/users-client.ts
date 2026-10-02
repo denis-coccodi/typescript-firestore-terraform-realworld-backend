@@ -1,8 +1,8 @@
-import { faker } from '@faker-js/faker';
+import {faker} from '@faker-js/faker';
 import * as assert from 'node:assert';
-import * as request from 'supertest';
-import { app } from '../../src/app';
-import { config } from '../../src/config';
+import request from 'supertest';
+import {app} from './app';
+import {config} from '../../src/config';
 
 interface UpdateUserParams {
   email?: string;
@@ -43,7 +43,9 @@ class UsersClient {
 
     const updateUserParams = {
       bio: faker.lorem.paragraphs(),
-      image: faker.internet.url() || `${config.baseUrl}/assets/images/avatar-profile.png`,
+      image:
+        faker.internet.url() ||
+        `${config.baseUrl}/assets/images/avatar-profile.png`,
     };
 
     const updatedUser = await this.updateUser(
@@ -95,5 +97,4 @@ class UsersClient {
 
 const usersClient = new UsersClient();
 
-export { usersClient };
-
+export {usersClient};

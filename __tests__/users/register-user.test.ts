@@ -1,8 +1,9 @@
 import 'jest-extended';
-import * as request from 'supertest';
+import request from 'supertest';
 import {faker} from '@faker-js/faker';
-import {app} from '../../src/app';
+import {app} from '../utils/app';
 import {usersClient} from '../utils';
+import {config} from '../../src/config';
 
 describe('POST /api/users', () => {
   const registerUserUrl = '/api/users';
@@ -28,7 +29,7 @@ describe('POST /api/users', () => {
           username: requestBody.user.username,
           token: expect.not.toBeEmpty(),
           bio: null,
-          image: null,
+          image: `${config.baseUrl}/assets/images/avatar-profile.png`,
         },
       });
     });
