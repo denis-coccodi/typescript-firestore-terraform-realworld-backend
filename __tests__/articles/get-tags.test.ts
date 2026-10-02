@@ -1,13 +1,13 @@
 import 'jest-extended';
-import * as request from 'supertest';
-import {app} from '../../src/app';
-import {articlesClient, clearFirestore, usersClient} from '../utils';
+import request from 'supertest';
+import {app} from '../utils/app';
+import {articlesClient, clearDb, usersClient} from '../utils';
 
 describe('GET /api/tags', () => {
   const getTagsUrl = '/api/tags';
 
   beforeEach(async () => {
-    await clearFirestore();
+    await clearDb();
   });
 
   describe('given a valid request', () => {

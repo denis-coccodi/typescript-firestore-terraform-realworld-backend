@@ -1,12 +1,12 @@
-import { Joi } from 'celebrate';
+import {Joi} from 'celebrate';
 
 const envVarsSchema = Joi.object()
   .keys({
-    FIRESTORE_EMULATOR_HOST: Joi.string(),
-    FIRESTORE_PROJECT_ID: Joi.string(),
-    PORT: Joi.number().integer().required(),
     BASE_URL: Joi.string().uri().required(),
     CORS_ORIGINS: Joi.string().required(),
+    COOKIE_SAME_SITE: Joi.string()
+      .valid('strict', 'lax', 'none')
+      .default('none'),
     JWT_SECRET_KEY: Joi.string().required(),
     JWT_ISSUER: Joi.string().uri().required(),
     JWT_SECONDS_TO_EXPIRATION: Joi.number().integer().required(),
@@ -20,13 +20,9 @@ if (error) {
 }
 
 const config = {
-  firestore: {
-    emulatorHost: envVars.FIRESTORE_EMULATOR_HOST,
-    projectId: envVars.FIRESTORE_PROJECT_ID,
-  },
-  port: envVars.PORT,
   baseUrl: envVars.BASE_URL,
   corsOrigins: (envVars.CORS_ORIGINS as string).split(','),
+  cookieSameSite: envVars.COOKIE_SAME_SITE as 'strict' | 'lax' | 'none',
   jwt: {
     secretKey: envVars.JWT_SECRET_KEY,
     issuer: envVars.JWT_ISSUER,
@@ -34,5 +30,4 @@ const config = {
   },
 };
 
-export { config };
-
+export {config};

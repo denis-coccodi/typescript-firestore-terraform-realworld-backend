@@ -1,13 +1,18 @@
-import {Firestore} from '@google-cloud/firestore';
+import {Db, Doc} from '../db';
 import {NotFoundError} from '../errors';
 import {UsersService} from '../users';
 import {Profile} from './profile';
+
+interface FollowDoc extends Doc {
+  followerId: string;
+  followeeId: string;
+}
 
 class ProfilesService {
   private readonly followsCollection = 'follows';
 
   constructor(
-    private readonly firestore: Firestore,
+    private readonly db: Db,
     private readonly usersService: UsersService
   ) {}
 
@@ -36,7 +41,7 @@ class ProfilesService {
       return;
     }
 
-    await this.firestore.collection(this.followsCollection).add({
+    await this.db.create(this.followsCollection, {
       followerId,
       followeeId,
     });
@@ -49,13 +54,11 @@ class ProfilesService {
       throw new NotFoundError(`follower "${followerId}" not found`);
     }
 
-    const snapshot = await this.firestore
-      .collection(this.followsCollection)
-      .select('followeeId')
-      .where('followerId', '==', follower.id)
-      .get();
+    const follows = await this.db.find<FollowDoc>(this.followsCollection, {
+      where: [{field: 'followerId', op: '==', value: follower.id}],
+    });
 
-    return snapshot.docs.map(doc => doc.data().followeeId);
+    return follows.map(follow => follow.followeeId);
   }
 
   async unfollowUser(followerId: string, followeeId: string): Promise<void> {
@@ -67,19 +70,10 @@ class ProfilesService {
       return;
     }
 
-    const snapshot = await this.firestore
-      .collection(this.followsCollection)
-      .select()
-      .where('followerId', '==', followerId)
-      .where('followeeId', '==', followeeId)
-      .get();
+    const follows = await this.findFollows(followerId, followeeId);
 
-    if (snapshot.empty) {
-      return;
-    }
-
-    for (const doc of snapshot.docs) {
-      await doc.ref.delete();
+    for (const follow of follows) {
+      await this.db.delete(this.followsCollection, follow.id);
     }
   }
 
@@ -96,18 +90,18 @@ class ProfilesService {
       throw new NotFoundError(`followee "${followeeId}" not found`);
     }
 
-    const snapshot = await this.firestore
-      .collection(this.followsCollection)
-      .select()
-      .where('followerId', '==', follower.id)
-      .where('followeeId', '==', followee.id)
-      .get();
+    const follows = await this.findFollows(follower.id, followee.id);
 
-    if (snapshot.empty) {
-      return false;
-    }
+    return follows.length > 0;
+  }
 
-    return true;
+  private findFollows(followerId: string, followeeId: string) {
+    return this.db.find<FollowDoc>(this.followsCollection, {
+      where: [
+        {field: 'followerId', op: '==', value: followerId},
+        {field: 'followeeId', op: '==', value: followeeId},
+      ],
+    });
   }
 }
 

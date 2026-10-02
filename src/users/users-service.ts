@@ -1,6 +1,6 @@
-import {Firestore, FirestoreDataConverter} from '@google-cloud/firestore';
 import * as bcrypt from 'bcryptjs';
 import {Joi} from 'celebrate';
+import {Db, Doc} from '../db';
 import {AlreadyExistsError, NotFoundError} from '../errors';
 import {User} from './user';
 
@@ -12,29 +12,22 @@ interface UpdateUserParams {
   image?: string;
 }
 
-const userConverter: FirestoreDataConverter<User> = {
-  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
-  toFirestore: function (_user) {
-    throw new Error('Function not implemented.');
-  },
+interface UserDoc extends Doc {
+  email: string;
+  username: string;
+  passwordHash: string;
+  bio?: string;
+  image?: string;
+}
 
-  fromFirestore: function (snapshot) {
-    const data = snapshot.data();
-
-    return new User(
-      snapshot.id,
-      data.email,
-      data.username,
-      data.bio,
-      data.image
-    );
-  },
-};
+function toUser(doc: UserDoc): User {
+  return new User(doc.id, doc.email, doc.username, doc.bio, doc.image);
+}
 
 class UsersService {
   private readonly usersCollection = 'users';
 
-  constructor(private readonly firestore: Firestore) {}
+  constructor(private readonly db: Db) {}
 
   async registerUser(
     email: string,
@@ -55,123 +48,96 @@ class UsersService {
       passwordHash,
     };
 
-    const document = await this.firestore
-      .collection(this.usersCollection)
-      .add(userData);
+    const userDoc = await this.db.create<UserDoc>(
+      this.usersCollection,
+      userData
+    );
 
-    const user = new User(document.id, userData.email, userData.username);
-
-    return user;
+    return toUser(userDoc);
   }
 
   async getUserById(userId: string): Promise<User | undefined> {
-    const userSnapshot = await this.firestore
-      .doc(`${this.usersCollection}/${userId}`)
-      .withConverter(userConverter)
-      .get();
+    const userDoc = await this.db.get<UserDoc>(this.usersCollection, userId);
 
-    if (!userSnapshot.exists) {
-      return undefined;
-    }
-
-    return userSnapshot.data();
+    return userDoc && toUser(userDoc);
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const userSnapshot = await this.firestore
-      .collection(this.usersCollection)
-      .where('email', '==', email)
-      .withConverter(userConverter)
-      .get();
+    const userDoc = await this.findUserDoc('email', email);
 
-    if (userSnapshot.empty) {
-      return undefined;
-    }
-
-    return userSnapshot.docs[0].data();
+    return userDoc && toUser(userDoc);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const userSnapshot = await this.firestore
-      .collection(this.usersCollection)
-      .where('username', '==', username)
-      .withConverter(userConverter)
-      .get();
+    const userDoc = await this.findUserDoc('username', username);
 
-    if (userSnapshot.empty) {
-      return undefined;
-    }
-
-    return userSnapshot.docs[0].data();
+    return userDoc && toUser(userDoc);
   }
 
   async updateUser(userId: string, params: UpdateUserParams): Promise<User> {
-    const updatedData = await this.firestore.runTransaction(async t => {
-      const userDocRef = this.firestore.doc(
-        `${this.usersCollection}/${userId}`
-      );
+    const userData = await this.db.get<UserDoc>(this.usersCollection, userId);
 
-      const userSnapshot = await t.get(userDocRef);
+    if (!userData) {
+      throw new NotFoundError(`user "${userId}" not found`);
+    }
 
-      if (!userSnapshot.exists) {
-        throw new NotFoundError(`user "${userId}" not found`);
-      }
+    if (params.email && params.email !== userData.email) {
+      await this.validateEmailOrThrow(params.email);
+      userData.email = params.email;
+    }
 
-      const userData = userSnapshot.data()!;
+    if (params.username && params.username !== userData.username) {
+      await this.validateUsernameOrThrow(params.username);
+      userData.username = params.username;
+    }
 
-      if (params.email && params.email !== userData.email) {
-        await this.validateEmailOrThrow(params.email);
-        userData.email = params.email;
-      }
+    if (params.password) {
+      await this.validatePasswordOrThrow(params.password);
+      const passwordHash = await this.hashPassword(params.password);
+      userData.passwordHash = passwordHash;
+    }
 
-      if (params.username && params.username !== userData.username) {
-        await this.validateUsernameOrThrow(params.username);
-        userData.username = params.username;
-      }
+    if (params.bio && params.bio !== userData.bio) {
+      userData.bio = params.bio;
+    }
 
-      if (params.password) {
-        await this.validatePasswordOrThrow(params.password);
-        const passwordHash = await this.hashPassword(params.password);
-        userData.passwordHash = passwordHash;
-      }
+    if (params.image && params.image !== userData.image) {
+      await this.validateImageOrThrow(params.image);
+      userData.image = params.image;
+    }
 
-      if (params.bio && params.bio !== userData.bio) {
-        userData.bio = params.bio;
-      }
-
-      if (params.image && params.image !== userData.image) {
-        await this.validateImageOrThrow(params.image);
-        userData.image = params.image;
-      }
-
-      t.update(userDocRef, userData);
-      return userData;
-    });
-
-    return new User(
+    const updatedData = await this.db.update<UserDoc>(
+      this.usersCollection,
       userId,
-      updatedData.email,
-      updatedData.username,
-      updatedData.bio,
-      updatedData.image
+      {
+        email: userData.email,
+        username: userData.username,
+        passwordHash: userData.passwordHash,
+        bio: userData.bio,
+        image: userData.image,
+      }
     );
+
+    return toUser(updatedData!);
   }
 
   async verifyPassword(email: string, password: string): Promise<boolean> {
-    const snapshot = await this.firestore
-      .collection(this.usersCollection)
-      .select('passwordHash')
-      .where('email', '==', email)
-      .get();
+    const userDoc = await this.findUserDoc('email', email);
 
-    if (snapshot.empty) {
+    if (!userDoc) {
       throw new NotFoundError('"email" not found');
     }
 
-    const userDoc = snapshot.docs[0];
-    const userData = userDoc.data();
+    return await bcrypt.compare(password, userDoc.passwordHash);
+  }
 
-    return await bcrypt.compare(password, userData.passwordHash);
+  private async findUserDoc(field: 'email' | 'username', value: string) {
+    const [userDoc] = await this.db.find<UserDoc>(this.usersCollection, {
+      where: [{field, op: '==', value}],
+      limit: 1,
+    });
+
+    return userDoc as UserDoc | undefined;
   }
 
   private async validateEmailOrThrow(email: string) {

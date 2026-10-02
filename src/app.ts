@@ -1,79 +1,78 @@
-import {Firestore} from '@google-cloud/firestore';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
-import path from 'path';
 import {ArticlesRouter, ArticlesService} from './articles';
 import {config} from './config';
+import {Db} from './db';
 import {errorHandler} from './error-handler';
 import {Auth} from './middleware';
 import {ProfilesRouter, ProfilesService} from './profiles';
 import {JWTService, UsersRouter, UsersService} from './users';
 
-const firestore = new Firestore({
-  projectId: config.firestore.projectId,
-});
+function createApp(db: Db) {
+  const usersService = new UsersService(db);
 
-const usersService = new UsersService(firestore);
+  const jwtService = new JWTService(usersService, config.jwt.secretKey, {
+    issuer: config.jwt.issuer,
+    secondsToExpiration: config.jwt.secondsToExpiration,
+  });
 
-const jwtService = new JWTService(usersService, config.jwt.secretKey, {
-  issuer: config.jwt.issuer,
-  secondsToExpiration: config.jwt.secondsToExpiration,
-});
+  const profilesService = new ProfilesService(db, usersService);
 
-const profilesService = new ProfilesService(firestore, usersService);
+  const articlesService = new ArticlesService(
+    db,
+    usersService,
+    profilesService
+  );
 
-const articlesService = new ArticlesService(
-  firestore,
-  usersService,
-  profilesService
-);
+  const auth = new Auth(jwtService);
 
-const auth = new Auth(jwtService);
+  const usersRouter = new UsersRouter(auth, usersService, jwtService).router;
 
-const usersRouter = new UsersRouter(auth, usersService, jwtService).router;
+  const profilesRouter = new ProfilesRouter(auth, usersService, profilesService)
+    .router;
 
-const profilesRouter = new ProfilesRouter(auth, usersService, profilesService)
-  .router;
+  const articlesRouter = new ArticlesRouter(
+    auth,
+    articlesService,
+    usersService,
+    profilesService
+  ).router;
 
-const articlesRouter = new ArticlesRouter(
-  auth,
-  articlesService,
-  usersService,
-  profilesService
-).router;
+  const app = express();
 
-const app = express();
+  app.use(
+    cors({
+      origin: config.corsOrigins,
+      credentials: true,
+    })
+  );
 
-app.use(
-  cors({
-    origin: config.corsOrigins,
-    credentials: true,
-  })
-);
+  app.use(express.json());
+  app.use(cookieParser());
 
-app.use(express.json());
-app.use(cookieParser());
+  // Files under public/ (e.g. /assets/images/*) are served by Cloudflare's
+  // static assets before a request ever reaches this app.
 
-// Serve static files from the 'assets' directory
-app.use('/assets', express.static(path.join(__dirname, '../assets')));
+  app.use('/api', usersRouter);
 
-app.use('/api', usersRouter);
+  app.use('/api', profilesRouter);
 
-app.use('/api', profilesRouter);
+  app.use('/api', articlesRouter);
 
-app.use('/api', articlesRouter);
+  app.use(
+    async (
+      err: Error,
+      _req: express.Request,
+      res: express.Response,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      _next: express.NextFunction
+    ) => {
+      await errorHandler.handleError(err, res);
+    }
+  );
 
-app.use(
-  async (
-    err: Error,
-    _req: express.Request,
-    res: express.Response,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _next: express.NextFunction
-  ) => {
-    await errorHandler.handleError(err, res);
-  }
-);
+  return app;
+}
 
-export {app};
+export {createApp};

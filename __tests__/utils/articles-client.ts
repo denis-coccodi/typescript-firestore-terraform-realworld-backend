@@ -1,7 +1,7 @@
-import * as request from 'supertest';
+import request from 'supertest';
 import * as assert from 'node:assert';
 import {faker} from '@faker-js/faker';
-import {app} from '../../src/app';
+import {app} from './app';
 
 interface UpdateArticleParams {
   title?: string;
